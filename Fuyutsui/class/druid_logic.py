@@ -23,7 +23,9 @@ def run_druid_logic(state_dict, spec_name):
     combat = state_dict.get("战斗")
     casting = state_dict.get("施法")
     channeling = state_dict.get("引导")
-    natural_heal_cd = spells.get("自然之愈", -1)
+    group_type = state_dict.get("队伍类型", 0)
+    nature_cure_cd = spells.get("自然之愈", -1)
+
     action_hotkey = None
     current_step = "无匹配技能"
     unit_info = {}
@@ -108,13 +110,13 @@ def run_druid_logic(state_dict, spec_name):
 
         if channeling > 0:
             current_step = "在引导,不执行任何操作"
-        elif spells.get("自然之愈") == 0 and dispel_unit_magic is not None:
+        elif nature_cure_cd == 0 and dispel_unit_magic is not None and group_type == 46:
             current_step = f"施放 自然之愈 on {dispel_unit_magic}"
             action_hotkey = get_hotkey(int(dispel_unit_magic), "自然之愈")
-        elif spells.get("自然之愈") == 0 and dispel_unit_curse is not None:
+        elif nature_cure_cd == 0 and dispel_unit_curse is not None and group_type == 46:
             current_step = f"施放 自然之愈 on {dispel_unit_curse}"
             action_hotkey = get_hotkey(int(dispel_unit_curse), "自然之愈")
-        elif spells.get("自然之愈") == 0 and dispel_unit_poison is not None:
+        elif nature_cure_cd == 0 and dispel_unit_poison is not None and group_type == 46:
             current_step = f"施放 自然之愈 on {dispel_unit_poison}"
             action_hotkey = get_hotkey(int(dispel_unit_poison), "自然之愈")
         elif has_lifebloom_unit is not None and has_lifebloom_duration is not None and has_lifebloom_duration < 3:
