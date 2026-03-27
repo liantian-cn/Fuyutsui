@@ -99,7 +99,7 @@ function fu.updateOnUpdate()
             creat(aura.index, 0)
         end
     end
-    if not fu.group_blocks and not fu.group_blocks.rejuv then return end
+    if not fu.group_blocks or not fu.group_blocks.rejuv then return end
     for unit, data in pairs(fu.group) do
         local has_rejuv_count = 0
         local index = fu.group_blocks.unit_start + data.index * fu.group_blocks.block_num + fu.group_blocks.rejuv
