@@ -15,6 +15,7 @@ def run_priest_logic(state_dict, spec_name):
     moving = state_dict.get("移动")
     group_type = int(state_dict.get("队伍类型", 0) or 0)
     hero_talent = int(state_dict.get("英雄天赋", 0) or 0)
+    boss_id = int(state_dict.get("首领战", 0) or 0)
     # 默认返回：无操作
     action_hotkey = None
     current_step = "无匹配技能"
@@ -236,6 +237,7 @@ def run_priest_logic(state_dict, spec_name):
         lightweaver_count = state_dict.get("织光层数", 0)
         light_burst = state_dict.get("圣光涌动", 0)
         benediction = state_dict.get("祈福", 0)
+        casting_spell = state_dict.get("施法技能", 0)
 
         dispel_unit, _ = get_unit_with_dispel_type(state_dict, 1)
         lowest_u, lowest_p = get_lowest_health_unit(state_dict, 100)
@@ -243,6 +245,11 @@ def run_priest_logic(state_dict, spec_name):
         no_mend_tank, no_mend_tank_pct = get_unit_with_role_and_without_aura_name(state_dict, 1, "愈合祷言")
         count90 = get_count_units_below_health(state_dict, 90)
         count80 = get_count_units_below_health(state_dict, 80)
+
+        if casting_spell == 11 and lightweaver_count > 0:
+            lightweaver_count = lightweaver_count - 1
+        if casting_spell == 4 or casting_spell == 19:
+            lightweaver_count = lightweaver_count + 1
 
         if channeling > 0:
             current_step = "引导,不执行任何操作"
@@ -272,8 +279,11 @@ def run_priest_logic(state_dict, spec_name):
             action_hotkey = get_hotkey(0, "神圣化身")
         elif hero_talent == 3:
             if group_type <= 40:
+                if purify_cd == 0 and dispel_unit is not None and (boss_id == 4 or boss_id == 5):
+                    current_step = f"施放 纯净术 on {dispel_unit}"
+                    action_hotkey = get_hotkey(int(dispel_unit), "纯净术")
                 # 愈合祷言
-                if mending_cd == 0 and no_mend_u is not None and no_mend_p is not None and no_mend_p < 95:
+                elif mending_cd == 0 and no_mend_u is not None and no_mend_p is not None and no_mend_p < 95:
                     current_step = f"施放 愈合祷言 on {no_mend_u}, 无愈合祷言生命低于95%的单位"
                     action_hotkey = get_hotkey(int(no_mend_u), "愈合祷言")
                 elif mending_cd == 0 and no_mend_tank is not None:
@@ -284,47 +294,50 @@ def run_priest_logic(state_dict, spec_name):
                     action_hotkey = get_hotkey(int(no_mend_u), "愈合祷言")
                 elif lowest_u is not None and lowest_p is not None and lowest_p < 90:
                     # 圣言术：静
-                    if serenity_charge <= 3 and lowest_p < 80:
+                    if serenity_charge <= 3 and lowest_p < 85:
                         current_step = f"施放 圣言术：静 on {lowest_u}, 生命低于80%的单位"
                         action_hotkey = get_hotkey(int(lowest_u), "圣言术：静")
                     elif serenity_cd == 0 and lowest_p < 60:
                         current_step = f"施放 圣言术：静 on {lowest_u}, 生命低于60%的单位"
                         action_hotkey = get_hotkey(int(lowest_u), "圣言术：静")
                     # 神圣化身
-                    elif apotheosis_cd == 0 and count80 >= 5 and serenity_cd > 5:
+                    elif apotheosis_cd == 0 and count80 >= 4 and serenity_cd > 5:
                         current_step = "施放 神圣化身"
                         action_hotkey = get_hotkey(0, "神圣化身")
                     # 光晕
-                    elif count90 >= 5 and halo_cd == 0:
+                    elif count90 >= 4 and halo_cd == 0:
                         current_step = "施放 光晕"
                         action_hotkey = get_hotkey(0, "光晕")
                     # 织光者, 织光层数为0时
-                    elif lightweaver_count == 0:
+                    elif lightweaver_count == 0 or (benediction > 0 and lowest_p < 80) :
                         current_step = f"施放 快速治疗 on {lowest_u}, 生命最低的单位"
                         action_hotkey = get_hotkey(int(lowest_u), "快速治疗")
                     # 治疗祷言
-                    elif lightweaver_count > 0 and light_burst > 0 and count90 >= 4:
+                    elif lightweaver_count > 0 and light_burst > 0 and count90 >= 3:
                         current_step = "施放 治疗祷言"
                         action_hotkey = get_hotkey(0, "治疗祷言")
-                    elif lightweaver_count > 0 and count80 >= 5:
+                    elif not moving and lightweaver_count == 4 and count90 >= 5:
+                        current_step = "施放 治疗祷言"
+                        action_hotkey = get_hotkey(0, "治疗祷言")
+                    elif not moving and lightweaver_count > 0 and count80 >= 5:
                         current_step = "施放 治疗祷言"
                         action_hotkey = get_hotkey(0, "治疗祷言")
                     # 快速治疗
-                    elif lightweaver_count < 4:
+                    elif lightweaver_count < 3 and lowest_p < 80:
                         current_step = f"施放 快速治疗 on {lowest_u}, 生命最低的单位"
                         action_hotkey = get_hotkey(int(lowest_u), "快速治疗")
-                    elif lowest_p < 80:
+                    elif lowest_p < 70:
                         current_step = f"施放 快速治疗 on {lowest_u}, 生命最低的单位"
                         action_hotkey = get_hotkey(int(lowest_u), "快速治疗")
-                elif target_valid and combat:
-                    if not moving and holy_fire_cd == 0:
-                        current_step = "施放 神圣之火"
-                        action_hotkey = get_hotkey(0, "神圣之火")
-                    elif not moving:
-                        current_step = "施放 惩击"
-                        action_hotkey = get_hotkey(0, "惩击")
-                    else:
-                        current_step = "战斗中-无匹配技能"
+                    elif target_valid and combat:
+                        if not moving and holy_fire_cd == 0:
+                            current_step = "施放 神圣之火"
+                            action_hotkey = get_hotkey(0, "神圣之火")
+                        elif not moving:
+                            current_step = "施放 惩击"
+                            action_hotkey = get_hotkey(0, "惩击")
+                        else:
+                            current_step = "战斗中-无匹配技能"
             elif group_type == 46:
                 if purify_cd == 0 and dispel_unit is not None:
                     current_step = f"施放 纯净术 on {dispel_unit}"
@@ -358,7 +371,7 @@ def run_priest_logic(state_dict, spec_name):
                     # 治疗祷言
                     elif lightweaver_count > 0 and (light_burst > 0 or lightweaver_count == 4) and count90 >= 2:
                         current_step = "施放 治疗祷言"
-                        action_hotkey = get_hotkey(0, "治疗祷言")    
+                        action_hotkey = get_hotkey(0, "治疗祷言")
                     # 祈福
                     elif benediction > 0:
                         current_step = f"祈福 施放 快速治疗 on {lowest_u}, 生命最低的单位"
@@ -391,7 +404,28 @@ def run_priest_logic(state_dict, spec_name):
     elif spec_name == "暗影":
         # 暗影逻辑比较简单，不需要 unit_info
         if channeling > 0:
-            current_step = "在引导,不执行任何操作"
+            if combat and target_valid and assistant !=8:
+                action_map = {
+                    1: ("吸血鬼之触", "吸血鬼之触"),
+                    2: ("心灵震爆", "心灵震爆"),
+                    4: ("暗言术：灭", "暗言术：灭"),
+                    5: ("暗言术：痛", "暗言术：痛"),
+                    6: ("暗言术：癫", "暗言术：癫"),
+                    8: ("精神鞭笞", "精神鞭笞"),
+                    9: ("虚空形态", "虚空形态"),
+                    10: ("虚空洪流", "虚空洪流"),
+                    11: ("触须猛击", "触须猛击"),
+                    12: ("虚空冲击", "虚空冲击"),
+                    13: ("虚空齐射", "虚空齐射"),
+                    14: ("精神鞭笞：狂", "精神鞭笞"),
+                    15: ("光晕", "光晕"),
+                }
+                tup = action_map.get(assistant)
+                if tup:
+                    current_step = f"施放 {tup[0]}"
+                    action_hotkey = get_hotkey(0, tup[1])
+                else:
+                    current_step = "战斗中-无匹配技能"
         elif spells.get("绝望祷言") == 0 and health < 50:
             current_step = "施放 绝望祷言"
             action_hotkey = get_hotkey(0, "绝望祷言")
