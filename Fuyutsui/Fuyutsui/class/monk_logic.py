@@ -53,10 +53,10 @@ def run_monk_logic(state_dict, spec_name):
             return None, current_step, unit_info
 
         if 战斗 and 目标有效:
-            if 酒池 > 10 and 天神充能 == 0:
+            if 酒池 > 10 and 天神酒 == 0 and 天神充能 == 0:
                 current_step = "施放 天神酒"
                 action_hotkey = get_hotkey(0, "天神酒")
-            elif 酒池 > 10 and 灌注充能 == 0:
+            elif 酒池 > 10 and 天神灌注 == 0 and 灌注充能 == 0:
                 current_step = "施放 天神灌注"
                 action_hotkey = get_hotkey(0, "天神灌注")
             elif 酒池 > 20 and 活血充能 == 0:
