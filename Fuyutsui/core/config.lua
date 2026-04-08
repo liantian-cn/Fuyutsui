@@ -320,7 +320,7 @@ fu.auras = {
         name = "青龙之心",
         spellId = 443421,
         remaining = 0,
-        duration = 8,
+        duration = 4,
         expirationTime = nil,
     },
 }
@@ -453,8 +453,6 @@ fu.updateAuras = {
             { name = "生生不息2", auraID = 197919 } },
         -- 清空地窖
         [1263438] = { { name = "清空地窖", auraID = 1262768 } },
-        -- 法力茶
-        [115294] = { { name = "法力茶", auraID = 115867 } },
         -- 氤氲之雾
         [124682] = {
             { name = "生生不息1", auraID = 197919 },
@@ -466,7 +464,6 @@ fu.updateAuras = {
             { name = "生生不息2", auraID = 197919 } },
         -- 旭日东升踢
         [107428] = { { name = "生生不息1", auraID = 197919 } },
-        [116680] = { { name = "青龙之心", auraID = 443421, remaining = 4 } },
     },
     -- 法术图标事件"SPELL_UPDATE_ICON",
     -- 检测参数: 基础法术ID
@@ -559,6 +556,16 @@ fu.failedSpells = {
     [1022] = 5,   -- 保护祝福
     [642] = 6,    -- 圣盾术
 
+    -- 武僧
+    [322109] = 1, -- 轮回之触
+    [119381] = 2, -- 扫堂腿
+    [101643] = 3, -- 魂体双分
+    [119996] = 4, -- 转移
+    [116849] = 5, -- 作茧缚命
+    [115310] = 6, -- 还魂术
+    [116844] = 7, -- 平心之环
+    [115078] = 8, -- 分筋错骨
+    [132578] = 9, -- 玄牛下凡
 }
 -- 一键辅助法术
 fu.assistant = {
@@ -665,6 +672,11 @@ fu.assistant = {
     [115181]  = 8,  -- 火焰之息
     [116847]  = 9,  -- 碧玉疾风
     [117952]  = 10, -- 碎玉闪电
+    [101546]  = 11, -- 神鹤引项踢
+    [100784]  = 12, -- 幻灭踢
+    [113656]  = 13, -- 怒雷破
+    [107428]  = 14, -- 旭日东升踢
+    [392983]  = 15, -- 风领主之击
     -- 猎人
     [217200]  = 1,  -- 倒刺射击
     [34026]   = 2,  -- 杀戮命令
@@ -769,6 +781,7 @@ fu.bossID = {
 -- 施法技能列表
 fu.castingSpellList = {
     [384255] = 101, -- 切换天赋
+
     -- 牧师
     [585] = 2,      -- 惩击
     [32375] = 3,    -- 群体驱散
@@ -788,6 +801,7 @@ fu.castingSpellList = {
     [120517] = 17,  -- 光晕
     [391403] = 18,  -- 精神鞭笞：狂
     [1262763] = 19, -- 祈福
+
     -- 术士
     [5782] = 1,     -- 恐惧
     [6789] = 2,     -- 死亡缠绕
@@ -808,12 +822,13 @@ fu.castingSpellList = {
     [132409] = 17,  -- 法术封锁
     [30146] = 18,   -- 召唤恶魔卫士
     [686] = 19,     -- 暗影箭
+
     -- 法师
-    [116] = 1,      -- 寒冰箭
-    [199786] = 2,   -- 冰川尖刺
-    [205021] = 3,   -- 冰霜射线
-    [1248829] = 4,  -- 暴风雪
-    [190356] = 5,   -- 暴风雪
+    [116] = 1,     -- 寒冰箭
+    [199786] = 2,  -- 冰川尖刺
+    [205021] = 3,  -- 冰霜射线
+    [1248829] = 4, -- 暴风雪
+    [190356] = 5,  -- 暴风雪
 
     -- 圣骑士
     [82326] = 1, -- 圣光术
@@ -1134,13 +1149,3 @@ function fu.creatColorCurve(point, b)
     curve:AddPoint(point, CreateColor(0, 0, b / 255, 1))
     return curve
 end
-
--- 创建颜色曲线
-fu.dispelCurve = C_CurveUtil.CreateColorCurve()
-fu.dispelCurve:SetType(Enum.LuaCurveType.Step)
-fu.dispelCurve:AddPoint(0, CreateColor(0, 0, 0, 1))         -- 无
-fu.dispelCurve:AddPoint(1, CreateColor(0, 1, 1 / 255, 1))   -- 魔法
-fu.dispelCurve:AddPoint(2, CreateColor(0, 1, 2 / 255, 1))   -- 诅咒
-fu.dispelCurve:AddPoint(3, CreateColor(0, 1, 3 / 255, 1))   -- 疾病
-fu.dispelCurve:AddPoint(4, CreateColor(0, 1, 4 / 255, 1))   -- 中毒
-fu.dispelCurve:AddPoint(11, CreateColor(0, 1, 11 / 255, 1)) -- 流血

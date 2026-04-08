@@ -678,3 +678,31 @@
   unit: 0
   技能: 转移
   热键: ALT-SHIFT-=
+171:
+  unit: 0
+  技能: 雷光聚神茶
+  热键: CTRL-SHIFT-NUMPAD1
+172:
+  unit: 0
+  技能: 法力茶
+  热键: CTRL-SHIFT-NUMPAD2
+173:
+  unit: 0
+  技能: 旭日东升踢
+  热键: CTRL-SHIFT-NUMPAD3
+174:
+  unit: 0
+  技能: 天神御身
+  热键: CTRL-SHIFT-NUMPAD4
+175:
+  unit: 0
+  技能: 分筋错骨
+  热键: CTRL-SHIFT-NUMPAD5
+176:
+  unit: 0
+  技能: 风领主之击
+  热键: CTRL-SHIFT-NUMPAD6
+177:
+  unit: 0
+  技能: 怒雷破
+  热键: CTRL-SHIFT-NUMPAD7

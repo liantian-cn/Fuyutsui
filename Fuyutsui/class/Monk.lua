@@ -55,6 +55,9 @@ function fu.updateSpecInfo()
                 [325153] = { index = 47, name = "爆炸酒桶" },
                 [198898] = { index = 48, name = "赤精之歌" },
                 [115399] = { index = 49, name = "玄牛酒" },
+                [116844] = { index = 50, name = "平心之环" },
+                [115078] = { index = 51, name = "分筋错骨" },
+                [132578] = { index = 52, name = "玄牛下凡" },
             },
         }
     elseif specIndex == 2 then
@@ -94,8 +97,11 @@ function fu.updateSpecInfo()
                     auraRef = fu.auras["玄牛之力"],
                     showKey = "remaining",
                 },
-                -- 443421 青龙之心
-                -- 116680 雷光聚神茶
+                ["青龙之心"] = {
+                    index = 30,
+                    auraRef = fu.auras["青龙之心"],
+                    showKey = "remaining",
+                },
             },
             spell_cd = {
                 [116680] = { index = 31, name = "雷光聚神茶", charge = 32 },
@@ -109,6 +115,10 @@ function fu.updateSpecInfo()
                 [1270621] = { index = 41, name = "宁神茶" },
                 [101643] = { index = 42, name = "魂体双分" },
                 [119996] = { index = 43, name = "魂体双分：转移" },
+                [107428] = { index = 44, name = "旭日东升踢" },
+                [100784] = { index = 45, name = "幻灭踢" },
+                [116844] = { index = 46, name = "平心之环" },
+                [115078] = { index = 47, name = "分筋错骨" },
             },
         }
         fu.group_blocks = {
@@ -123,6 +133,25 @@ function fu.updateSpecInfo()
             },
         }
     elseif specIndex == 3 then
+        fu.HarmfulSpellId = 392983
+        fu.blocks = {
+            ["目标生命值"] = 21,
+            ["敌人人数"] = 22,
+            auras = {
+
+            },
+            spell_cd = {
+                [322109] = { index = 31, name = "轮回之触" },
+                [119381] = { index = 32, name = "扫堂腿" },
+                [322101] = { index = 33, name = "移花接木" },
+                [101643] = { index = 34, name = "魂体双分" },
+                [119996] = { index = 35, name = "魂体双分：转移" },
+                [116705] = { index = 36, name = "切喉手" },
+                [198898] = { index = 37, name = "赤精之歌" },
+                [116844] = { index = 38, name = "平心之环" },
+                [115078] = { index = 39, name = "分筋错骨" },
+            },
+        }
     end
 end
 
@@ -149,8 +178,13 @@ function fu.CreateClassMacro()
         [18] = "移花接木",
         [19] = "魂体双分",
         [20] = "魂体双分：转移",
-
-
+        [21] = "雷光聚神茶",
+        [22] = "法力茶",
+        [23] = "旭日东升踢",
+        [24] = "天神御身",
+        [25] = "分筋错骨",
+        [26] = "风领主之击",
+        [27] = "怒雷破",
     }
     fu.CreateMacro(dynamicSpells, staticSpells, _)
 end

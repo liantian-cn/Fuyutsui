@@ -53,7 +53,7 @@ def run_paladin_logic(state_dict, spec_name):
         no_eternal_lowest_unit, no_eternal_lowest_unit_pct = get_lowest_health_unit_without_aura(state_dict, "永恒之火", health_threshold=101)
         count_units_below_health_90 = count_units_below_health(state_dict, 90)
         
-        if  法术失败 != 0:
+        if 法术失败 != 0:
             current_step, action_hotkey = _failed_spell_logic()
         elif 队伍类型 == 46 and spells.get("清洁术", 0) == 0 and dispel_unit_magic is not None:
             current_step = f"施放 清毒术 on {dispel_unit_magic}"

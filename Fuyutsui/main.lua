@@ -5,13 +5,15 @@ local GetSpellChargeDuration = C_Spell.GetSpellChargeDuration
 local GetSpellCooldown = C_Spell.GetSpellCooldown
 local GetOverrideSpell = C_Spell.GetOverrideSpell
 local IsSpellInRange = C_Spell.IsSpellInRange
+local IsSpellKnown = C_SpellBook.IsSpellKnown
 local EvaluateColorFromBoolean = C_CurveUtil.EvaluateColorFromBoolean
 
 local rc = LibStub("LibRangeCheck-3.0")
 local creat = fu.updateOrCreatTextureByIndex
+
 local state, group, target, nameplate, group_list = {}, {}, {}, {}, {}
 local fixed, group_blocks, blocks = {}, nil, nil
-local failedSpellTimer, updateIndex = nil, 1
+local failedSpell, failedSpellTimer, updateIndex = nil, nil, 1
 local updateSpecInfo, createClassMacro
 local roleMap, enumPowerType = fu.roleMap, fu.EnumPowerType
 local fallbackColor = CreateColor(0, 0, 1)
@@ -26,7 +28,7 @@ fixed["施法"] = 7
 fixed["引导"] = 8
 fixed["生命值"] = 9
 fixed["能量值"] = 10
-fixed["一件辅助"] = 11
+fixed["一键辅助"] = 11
 fixed["法术失败"] = 12
 fixed["目标类型"] = 13
 fixed["队伍类型"] = 14
@@ -35,8 +37,11 @@ fixed["首领战"] = 16
 fixed["难度"] = 17
 fixed["英雄天赋"] = 18
 
--- 创建颜色曲线
-local dispelCurve = fu.dispelCurve
+-- ================================================================
+--                          创建颜色曲线
+-- ================================================================
+local dispelCurve = C_CurveUtil.CreateColorCurve()
+dispelCurve:SetType(Enum.LuaCurveType.Step)
 local curve140 = fu.creatColorCurve(1, 140)
 local curve120 = fu.creatColorCurve(1, 120)
 local curve115 = fu.creatColorCurve(1, 115)
@@ -56,6 +61,7 @@ local helpfulSpells = {
 -- ================================================================
 --                          玩家信息
 -- ================================================================
+-- https://github.com/waynebian01/Fuyutsui
 
 -- 获取玩家固定信息, 函数, 变量
 local function getPlayerInfo()
@@ -86,20 +92,57 @@ local function getPlayerInfo()
     creat(fixed["专精"], specIndex / 255)
 end
 
+-- 各法术的驱散能力映射
+local dispelAbilities = {
+    [1] = { 527, 360823, 4987, 115450, 88423 },                    -- 魔法驱散
+    [2] = { 383016, 51886, 392378, 2782, 475 },                    -- 诅咒驱散
+    [3] = { 390632, 213634, 393024, 213644, 388874, 218164 },      -- 疾病驱散
+    [4] = { 392378, 2782, 393024, 213644, 388874, 218164, 365585 } -- 中毒驱散
+}
+
+-- 检查玩家是否学习了多个法术中的任意一个
+local function hasLearnedAnySpell(spellIDs)
+    for _, spellID in ipairs(spellIDs) do
+        if IsSpellKnown(spellID) then
+            return true
+        end
+    end
+    return false
+end
+
 local function updateSpellKnown()
+    -- 动态生成驱散能力
+    local dispelCapabilities = {
+        [1] = false, -- 魔法驱散
+        [2] = false, -- 疾病驱散
+        [3] = false, -- 诅咒驱散
+        [4] = false, -- 中毒驱散
+    }
     if fu.blocks and fu.blocks.spell_cd then
         for spellID, info in pairs(fu.blocks.spell_cd) do
-            info.isSpellKnown = C_SpellBook.IsSpellKnown(spellID)
+            info.isSpellKnown = IsSpellKnown(spellID)
         end
     end
     if fu.heroSpell then
         local index = 0
         for spellID, info in pairs(fu.heroSpell) do
-            if C_SpellBook.IsSpellKnown(spellID) then
+            if IsSpellKnown(spellID) then
                 index = info
             end
         end
         creat(fixed["英雄天赋"], index / 255)
+    end
+
+    for debuffType, spellIDs in pairs(dispelAbilities) do
+        dispelCapabilities[debuffType] = hasLearnedAnySpell(spellIDs)
+    end
+    dispelCurve:ClearPoints()
+    for i = 1, 4 do
+        if dispelCapabilities[i] then
+            dispelCurve:AddPoint(i, CreateColor(0, 1, i / 255, 1))
+        else
+            dispelCurve:AddPoint(i, CreateColor(0, 0, 0, 1))
+        end
     end
 end
 
@@ -113,6 +156,7 @@ local function updatePlayerSpecInfo()
     state.powerType = fu.powerType or nil -- 更新能量类型
     group_blocks = fu.group_blocks        -- 更新队伍块
     blocks = fu.blocks                    -- 更新色块
+    updateSpellKnown()
     -- 更新专精色块
     creat(fixed["专精"], specIndex / 255)
 end
@@ -245,19 +289,18 @@ end
 local function updateAuraBySpellCooldown(spellID)
     local updateAura = fu.updateAuras.bySpellCooldown[spellID]
     if not updateAura then return end
-    if type(updateAura) == "table" then
-        for _, info in pairs(updateAura) do
-            local aura = fu.auras[info.name]
-            if not aura then return end
-            if aura.duration then
+    for _, info in pairs(updateAura) do
+        local aura = fu.auras[info.name]
+        if not aura then return end
+        if aura.duration then
+            aura.expirationTime = GetTime() + aura.duration
+        end
+        if aura.count and info.step then
+            if info.step > 0 then
                 aura.expirationTime = GetTime() + aura.duration
-            end
-            if aura.count and info.step then
-                if info.step > 0 then
-                    aura.count = math.min(aura.countMax, aura.count + info.step)
-                else
-                    aura.count = math.max(aura.countMin, aura.count + info.step)
-                end
+                aura.count = math.min(aura.countMax, aura.count + info.step)
+            else
+                aura.count = math.max(aura.countMin, aura.count + info.step)
             end
         end
     end
@@ -372,6 +415,24 @@ local function updateAuraByIcon(spellID)
     end
 end
 
+local function updateTeaCount(spellID)
+    if spellID ~= 115294 then return end
+    local aura = fu.auras["法力茶"]
+    if aura and aura.count then
+        if state.channeling then
+            aura.count = math.max(0, aura.count - 1)
+        end
+    end
+end
+
+--[[local function updateTeaCount2(spellID)
+    if spellID ~= 115294 then return end
+    local aura = fu.auras["法力茶"]
+    if aura and aura.count then
+        aura.count = math.max(0, aura.count - 1)
+    end
+end]]
+
 -- 通过每帧更新光环
 local function updateAura()
     local currentTime = GetTime()
@@ -449,9 +510,9 @@ local function updatePlayerAssistant()
     local spellId = C_AssistedCombat.GetNextCastSpell()
     local assistant = fu.assistant[spellId]
     if spellId and assistant then
-        creat(fixed["一件辅助"], assistant / 255)
+        creat(fixed["一键辅助"], assistant / 255)
     else
-        creat(fixed["一件辅助"], 0)
+        creat(fixed["一键辅助"], 0)
     end
 end
 
@@ -468,7 +529,7 @@ local function updateSpellCooldown()
             local cdDurationObj = GetSpellCooldownDuration(spellID)
             local cdInfo = GetSpellCooldown(spellID)
             if cdDurationObj and cdInfo then
-                local result = cdDurationObj:EvaluateRemainingDuration(curve255)
+                local result = cdDurationObj:EvaluateRemainingDuration(curve255, 1)
                 fallbackColor:SetRGBA(0, index, 1)
                 local value = EvaluateColorFromBoolean(cdInfo.isEnabled, result, fallbackColor)
 
@@ -504,19 +565,42 @@ local function updateShapeshiftForm()
 end
 
 -- 更新法术失败
-local function updateSpellFailed(spellID)
-    local index = fu.failedSpells[spellID]
-    if index then
-        creat(fixed["法术失败"], index / 255)
-        if failedSpellTimer then
-            failedSpellTimer:Cancel()
-            failedSpellTimer = nil
+local function updateSpellFailed(spellID, isSuccess)
+    local isUsable = C_Spell.IsSpellUsable(spellID)
+
+    if spellID == 115294 and not isUsable then
+        local aura = fu.auras["法力茶"]
+        if aura and aura.count then
+            aura.count = 0
         end
-        failedSpellTimer = C_Timer.NewTimer(1, function()
-            creat(fixed["法术失败"], 0)
-            failedSpellTimer = nil
-        end)
     end
+
+    if not isSuccess then
+        failedSpell = fu.failedSpells[spellID]
+    end
+
+    if not isUsable or not failedSpell then return end
+
+    if isSuccess then
+        failedSpell = nil
+        print("插入技能: ", failedSpell, C_Spell.GetSpellName(spellID))
+        creat(fixed["法术失败"], 0)
+        return
+    end
+
+    creat(fixed["法术失败"], failedSpell / 255)
+
+    if failedSpellTimer then
+        failedSpellTimer:Cancel()
+        failedSpellTimer = nil
+        failedSpell = nil
+    end
+
+    failedSpellTimer = C_Timer.NewTimer(0.75, function()
+        creat(fixed["法术失败"], 0)
+        failedSpellTimer = nil
+        failedSpell = nil
+    end)
 end
 
 -- ================================================================
@@ -836,7 +920,6 @@ frame:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end
 
 frame:RegisterEvent("PLAYER_LOGIN")
 function frame:PLAYER_LOGIN()
-    SetCVar("ActionButtonUseKeyDown", 1)
     getPlayerInfo()
     updatePlayerState()
     updatePlayerCombat()
@@ -847,12 +930,12 @@ function frame:PLAYER_LOGIN()
     updateGroupCount()
     updateGroupType()
     fu.readKeybindings()
+    updateSpellKnown()
 end
 
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 function frame:PLAYER_ENTERING_WORLD()
     updatePlayerState()
-    updateSpellKnown()
     updateGroup()
 end
 
@@ -875,7 +958,6 @@ function frame:PLAYER_TALENT_UPDATE()
     updateTargetFullInfo()
     updateShapeshiftForm()
     fu.readKeybindings()
-    updateSpellKnown()
 end
 
 frame:RegisterEvent("PLAYER_DEAD")
@@ -963,6 +1045,7 @@ frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
 frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
 function frame:UNIT_SPELLCAST_CHANNEL_START(unitTarget, castGUID, spellID, castBarID)
     state.channeling = true
+    state.channelingSpellID = spellID
     updatePlayerCasting(spellID)
 end
 
@@ -972,13 +1055,17 @@ function frame:UNIT_SPELLCAST_CHANNEL_STOP(unitTarget, castGUID, spellID, castBa
     state.castTargetName = nil
     state.castTargetIndex = nil
     updatePlayerCasting(0)
+    -- updateTeaCount2(spellID)
 end
 
 frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 function frame:UNIT_SPELLCAST_SUCCEEDED(unitTarget, castGUID, spellID, castBarID)
     if not issecretvalue(spellID) then
         updateAuraBySuccess(spellID)
-        if spellID == 384255 then
+        updateSpellFailed(spellID, true)
+        -- print(spellID)
+        if spellID == 384255 or spellID == 200749 then
+            print("切换天赋")
             C_Timer.After(1, function() updateSpellKnown() end)
         end
     end
@@ -987,7 +1074,7 @@ end
 frame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
 function frame:UNIT_SPELLCAST_FAILED(unitTarget, castGUID, spellID, castBarID)
     if not issecretvalue(spellID) then
-        updateSpellFailed(spellID)
+        updateSpellFailed(spellID, false)
     end
 end
 
@@ -1093,6 +1180,7 @@ end
 
 frame:RegisterEvent("SPELL_UPDATE_USES") -- 法术充能冷却更新
 function frame:SPELL_UPDATE_USES(spellID, baseSpellID)
+    updateTeaCount(spellID)
     fu.updateUsesSpell = spellID
     fu.updateUsesBaseSpell = baseSpellID
     C_Timer.After(0.3, function()

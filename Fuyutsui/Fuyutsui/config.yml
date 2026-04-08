@@ -765,8 +765,16 @@ state:
       玄牛酒:
         step: 49
         type: "int"
+      平心之环:
+        step: 50
+        type: "int"
+      分筋错骨:
+        step: 51
+        type: "int"
+      玄牛下凡:
+        step: 52
+        type: "int"
   2:
-
     敌人人数:
       step: 21
       type: "int"
@@ -795,7 +803,9 @@ state:
     玄牛之力:
       step: 29
       type: "int"
-    
+    青龙之心:
+      step: 30
+      type: "int"
     spells:
       雷光茶:
         step: 31
@@ -836,6 +846,19 @@ state:
       魂体双分：转移:
         step: 43
         type: "int"
+      旭日东升踢:
+        step: 44
+        type: "int"
+      幻灭踢:
+        step: 45
+        type: "int"
+      平心之环:
+        step: 46
+        type: "int"
+      分筋错骨:
+        step: 47
+        type: "int"
+
     group:
       start: 70
       num: 5
@@ -854,7 +877,41 @@ state:
       氤氲之雾:
         step: 5
         type: "int"
-
+  3:
+    目标生命值:
+      step: 21
+      type: "int"
+    敌人人数:
+      step: 22
+      type: "int"
+    spells:
+      轮回之触:
+        step: 31
+        type: "int"
+      扫堂腿:
+        step: 32
+        type: "int"
+      移花接木:
+        step: 33
+        type: "int"
+      魂体双分:
+        step: 34
+        type: "int"
+      魂体双分：转移:
+        step: 35
+        type: "int"
+      切喉手:
+        step: 36
+        type: "int"
+      赤精之歌:
+        step: 37
+        type: "int"
+      平心之环:
+        step: 38
+        type: "int"
+      分筋错骨:
+        step: 39
+        type: "int"
 11:
   keymap: "druid.yml"
   3:

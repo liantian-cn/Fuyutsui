@@ -277,9 +277,9 @@ def _priest_holy_logic(state_dict):
     count80 = get_count_units_below_health(state_dict, 80)
 
     if 施法技能 == 11 and 织光层数 > 0:
-        织光层数 = 织光层数 - 1
+        织光层数 -= 1
     if 施法技能 == 4 or 施法技能 == 19:
-        织光层数 = 织光层数 + 1
+        织光层数 += 1
 
     治疗限值 = int(60 + (能量值 * 0.3)) # 90-60
     群疗限值数量 = get_count_units_below_health(state_dict, 治疗限值)
