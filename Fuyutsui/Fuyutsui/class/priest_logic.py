@@ -281,14 +281,6 @@ def _priest_holy_logic(state_dict):
     if 施法技能 == 4 or 施法技能 == 19:
         织光层数 += 1
 
-    驱散单位 = None
-    if dispel_magic_unit is not None:
-        if 队伍类型 == 46 and 首领战 not in no_dispel_bosses:
-            驱散单位 = dispel_magic_unit
-        elif 队伍类型 <= 40 and 首领战 in need_dispel_bosses:
-            驱散单位 = dispel_magic_unit
-    if 驱散单位 is None:
-        驱散单位 = dispel_unit_disease
     
     治疗限值 = int(60 + (能量值 * 0.3)) # 90-60
     群疗限值数量 = get_count_units_below_health(state_dict, 治疗限值)
