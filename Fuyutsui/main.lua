@@ -510,7 +510,7 @@ end
 local function updatePlayerAssistant()
     local spellId = C_AssistedCombat.GetNextCastSpell()
     local assistant = fu.assistant[spellId]
-    if spellId and assistant then
+    if assistant then
         creat(fixed["一键辅助"], assistant / 255)
     else
         creat(fixed["一键辅助"], 0)

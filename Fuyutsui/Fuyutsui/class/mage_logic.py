@@ -57,7 +57,7 @@ def run_mage_logic(state_dict, spec_name):
             current_step = "在引导,不执行任何操作"
         
         elif 战斗 and 目标有效:
-            if 敌人人数 > 3 and 冰冻之雨 > 0 and (暴风雪Tcd <= 1 or 暴风雪Ccd <= 1):
+            if 敌人人数 > 3 and 冰冻之雨 > 0 and (暴风雪Tcd == 0 or 暴风雪Ccd == 0):
                 current_step = "施放 暴风雪"
                 action_hotkey = get_hotkey(0, "暴风雪")
             elif 冰冷智慧 > 0 and 真能真空 == 0 and 冰风暴cd == 0:
@@ -66,7 +66,7 @@ def run_mage_logic(state_dict, spec_name):
             elif 寒冰指层数 == 2:
                 current_step = "施放 冰枪术"
                 action_hotkey = get_hotkey(0, "冰枪术")
-            elif 冰川尖刺 == 2:
+            elif 冰川尖刺 >= 2:
                 current_step = "施放 寒冰箭"
                 action_hotkey = get_hotkey(0, "寒冰箭")
             else:
@@ -78,6 +78,9 @@ def run_mage_logic(state_dict, spec_name):
                     5: ("冰霜射线", "冰霜射线"),
                     6: ("冰风暴", "冰风暴"),
                     7: ("寒冰宝珠", "寒冰宝珠"),
+                    8: ("暴风雪", "暴风雪"),
+                    9: ("霜火之箭", "寒冰箭"),
+                    10: ("彗星风暴", "冰霜射线"),
                 }
                 tup = action_map.get(一键辅助)
                 if tup:

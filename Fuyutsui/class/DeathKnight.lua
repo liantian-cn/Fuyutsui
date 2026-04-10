@@ -40,7 +40,7 @@ function fu.updateSpecInfo()
                 },
                 ["食尸鬼层数"] = {
                     index = 26,
-                    auraRef = fu.auras["食尸鬼层数"],
+                    auraRef = fu.auras["次级食尸鬼"],
                     showKey = "count",
                 },
                 ["末日突降"] = {

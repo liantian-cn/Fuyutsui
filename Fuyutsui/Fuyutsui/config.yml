@@ -185,20 +185,6 @@ state:
         step: 44
         type: "int"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 2:
   keymap: "paladin.yml"
   1:
@@ -1056,6 +1042,7 @@ state:
       分筋错骨:
         step: 39
         type: "int"
+
 11:
   keymap: "druid.yml"
   3:
@@ -1123,12 +1110,15 @@ state:
     连击点:
       step: 23
       type: "int"
-
-    节能施法:
+    施法技能:
       step: 24
       type: "int"
+    
+    节能施法:
+      step: 29
+      type: "int"
     丛林之魂: 
-      step: 25
+      step: 30
       type: "int"
 
     spells:
