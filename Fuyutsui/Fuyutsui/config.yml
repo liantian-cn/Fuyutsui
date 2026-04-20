@@ -54,6 +54,9 @@ state:
   英雄天赋:
     step: 18
     type: "int"
+  惩戒终结模式:
+    step: 50
+    type: "int"
     
 1:
   keymap: "warrior.yml"
