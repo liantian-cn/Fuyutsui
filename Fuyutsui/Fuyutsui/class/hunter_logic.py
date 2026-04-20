@@ -60,7 +60,7 @@ def run_hunter_logic(state_dict, spec_name):
     生命值 = state_dict.get("生命值")
     能量值 = state_dict.get("能量值")
     一键辅助 = state_dict.get("一键辅助")
-    目标类型 = state_dict.get("目标类型")
+    目标类型 = state_dict.get("目标类型", 0)
     战斗 = state_dict.get("战斗")
     施法 = state_dict.get("施法")
     引导 = state_dict.get("引导")

@@ -46,6 +46,10 @@ action_map = {
     40: ("吞噬之焰", "献祭光环"),
     41: ("献祭光环", "献祭光环"),
     42: ("投掷利刃", "投掷利刃"),
+    43: ("黑暗", "黑暗"),
+    44: ("吞噬", "吞噬"),
+    45: ("坍缩之星", "虚空变形"),
+    46: ("根除", "收割"),
 }
 
 failed_spell_map = {
@@ -57,7 +61,9 @@ failed_spell_map = {
     26: "邪能毁灭",
     27: "沉默咒符",
     28: "虚空新星",
+    29: "虚空变形",
     43: "黑暗",
+    45: "虚空变形",
 }
 
 # 找到失败法术，必须是法术有冷却时间，并且冷却时间为 0
@@ -80,7 +86,7 @@ def run_demonhunter_logic(state_dict, spec_name):
     能量值 = state_dict.get("能量值")
     一键辅助 = state_dict.get("一键辅助")
     法术失败 = state_dict.get("法术失败", 0)
-    目标类型 = state_dict.get("目标类型")
+    目标类型 = state_dict.get("目标类型",0)
     队伍类型 = int(state_dict.get("队伍类型", 0) or 0)
     队伍人数 = int(state_dict.get("队伍人数", 0) or 0)
     首领战 = int(state_dict.get("首领战", 0) or 0)

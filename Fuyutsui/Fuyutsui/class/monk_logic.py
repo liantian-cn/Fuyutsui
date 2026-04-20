@@ -58,7 +58,7 @@ def run_monk_logic(state_dict, spec_name):
     能量值 = state_dict.get("能量值")
     一键辅助 = state_dict.get("一键辅助")
     法术失败 = state_dict.get("法术失败", 0)
-    目标类型 = state_dict.get("目标类型")
+    目标类型 = state_dict.get("目标类型", 0)
     队伍类型 = int(state_dict.get("队伍类型", 0) or 0)
     队伍人数 = int(state_dict.get("队伍人数", 0) or 0)
     首领战 = int(state_dict.get("首领战", 0) or 0)
@@ -223,6 +223,7 @@ def run_monk_logic(state_dict, spec_name):
             "最低生命值": 最低生命值,
             "无复苏单位": 无复苏单位,
             "无复苏生命值": 无复苏生命值,
+            "玄牛之力": 玄牛之力,
         }
 
         if 引导 > 0:

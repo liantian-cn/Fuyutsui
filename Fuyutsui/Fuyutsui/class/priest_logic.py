@@ -303,7 +303,7 @@ def _priest_holy_logic(state_dict):
     能量值 = state_dict.get("能量值")
     一键辅助 = state_dict.get("一键辅助")
     法术失败 = state_dict.get("法术失败", 0)
-    目标类型 = state_dict.get("目标类型")
+    目标类型 = state_dict.get("目标类型", 0)
     队伍类型 = int(state_dict.get("队伍类型", 0) or 0)
     队伍人数 = int(state_dict.get("队伍人数", 0) or 0)
     首领战 = int(state_dict.get("首领战", 0) or 0)
@@ -346,7 +346,6 @@ def _priest_holy_logic(state_dict):
     if 施法技能 == 29 or 施法技能 == 33:
         织光层数 += 1
 
-    
     治疗限值 = int(60 + (能量值 * 0.3)) # 90-60
     群疗限值数量 = get_count_units_below_health(state_dict, 治疗限值)
     群疗限值2数量 = get_count_units_below_health(state_dict, 治疗限值 - 10)
@@ -515,7 +514,7 @@ def _priest_shadow_logic(state_dict):
     能量值 = state_dict.get("能量值")
     一键辅助 = state_dict.get("一键辅助")
     法术失败 = state_dict.get("法术失败", 0)
-    目标类型 = state_dict.get("目标类型")
+    目标类型 = state_dict.get("目标类型", 0)
     队伍类型 = int(state_dict.get("队伍类型", 0) or 0)
     队伍人数 = int(state_dict.get("队伍人数", 0) or 0)
     首领战 = int(state_dict.get("首领战", 0) or 0)
