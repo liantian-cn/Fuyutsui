@@ -35,9 +35,10 @@ run_monk_logic = _load_logic_module("monk_logic")
 run_demonhunter_logic = _load_logic_module("demonhunter_logic")
 run_evoker_logic = _load_logic_module("evoker_logic")
 
-TOGGLE_INTERVAL = 0.05
-LOGIC_INTERVAL = 0.1
-GUI_UPDATE_MS = 100
+TOGGLE_INTERVAL = 0.1
+LOGIC_INTERVAL = 0.15
+GUI_UPDATE_MS = 200
+TOGGLE_DEBOUNCE_SEC = 0.12
 
 LOGIC_FUNCS_BY_CLASS = {
     1: run_warrior_logic,
@@ -186,6 +187,7 @@ def _run_priest_loop():
     prev_pressed = False
     prev_vk = _toggle_vk
     last_logic_time = 0.0
+    last_toggle_time = 0.0
 
     while True:
         if _binding_key_mode:
@@ -202,8 +204,15 @@ def _run_priest_loop():
             prev_pressed = False
             prev_vk = vk_now
 
-        current_pressed = (ctypes.windll.user32.GetAsyncKeyState(vk_now) & 0x8000) != 0
-        rising = current_pressed and not prev_pressed
+        key_state = ctypes.windll.user32.GetAsyncKeyState(vk_now)
+        current_pressed = (key_state & 0x8000) != 0
+        # Also use low-order transition bit to reduce missed fast taps between polls.
+        rising_raw = (current_pressed and not prev_pressed) or ((key_state & 0x0001) != 0)
+        now = time.time()
+        # Mouse side buttons can jitter; debounce avoids rapid false toggles/flicker.
+        rising = rising_raw and (now - last_toggle_time >= TOGGLE_DEBOUNCE_SEC)
+        if rising:
+            last_toggle_time = now
         falling = (not current_pressed) and prev_pressed
 
         # 根据“发送模式”决定何时启用逻辑与何时只发送一次
@@ -239,7 +248,6 @@ def _run_priest_loop():
 
         prev_pressed = current_pressed
 
-        now = time.time()
         if now - last_logic_time >= LOGIC_INTERVAL:
             last_logic_time = now
             state_dict = get_info()
@@ -248,7 +256,7 @@ def _run_priest_loop():
             if state_dict:
                 class_id = state_dict.get("职业")
                 spec_id = state_dict.get("专精")
-                config = load_config()
+                config = _get_config_cached()
                 class_name, spec_name = get_class_and_spec_name(config, class_id, spec_id)
                 select_keymap_for_class(class_id)
 

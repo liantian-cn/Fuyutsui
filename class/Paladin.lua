@@ -124,6 +124,8 @@ function fu.updateSpecInfo()
         fu.powerType = "MANA"
         fu.blocks = {
             ["神圣能量"] = 21,
+            ["爆发开关"] = 23,
+            ["AOE开关"] = 24,
             auras = {
                 ["神圣意志"] = {
                     index = 22,
@@ -132,46 +134,15 @@ function fu.updateSpecInfo()
                 },
             },
         }
-
         fu.spellCooldown[213644] = { index = 38, name = "清毒术" }
         fu.spellCooldown[20271] = { index = 39, name = "审判", charge = 40 }
         fu.spellCooldown[375576] = { index = 41, name = "圣洁鸣钟" }
         fu.spellCooldown[184575] = { index = 42, name = "公正之剑" }
         fu.spellCooldown[343527] = { index = 43, name = "处决宣判" }
         fu.spellCooldown[255937] = { index = 44, name = "灰烬觉醒" }
+
     end
 end
-
--- =========================================================================
--- 添加自定义终结模式切换宏 (/fu)
--- 0 = 单体 (最终审判),  1 = 群体 (神圣风暴)
--- =========================================================================
-fu.RetFinisherMode = 0 
-if fu.FinisherModeTicker then fu.FinisherModeTicker:Cancel() fu.FinisherModeTicker = nil end
-
-SLASH_FUYUTSUI_RET_MODE1 = "/fu"
-SlashCmdList["FUYUTSUI_RET_MODE"] = function(msg)
-    if not (fu.classId == 2 and C_SpecializationInfo.GetSpecialization() == 3) then return end
-    
-    fu.RetFinisherMode = (fu.RetFinisherMode == 0) and 1 or 0
-    local text = (fu.RetFinisherMode == 1) and "单体" or "群体"
-    
-    print("|cffffffff" .. text .. "|r")
-    UIErrorsFrame:AddMessage(text, 1.0, 1.0, 0.0)
-end
-
--- 延迟注册绘画任务，高频刷新 Block 50，让 Python 端稳定读取
-C_Timer.After(2.0, function()
-    if fu.classId == 2 then
-        fu.FinisherModeTicker = C_Timer.NewTicker(0.5, function()
-            if C_SpecializationInfo.GetSpecialization() == 3 then
-                if type(fu.updateOrCreatTextureByIndex) == "function" then
-                    fu.updateOrCreatTextureByIndex(50, fu.RetFinisherMode / 255)
-                end
-            end
-        end)
-    end
-end)
 
 -- 创建圣骑士宏
 function fu.CreateClassMacro()
@@ -193,7 +164,7 @@ function fu.CreateClassMacro()
         [13] = "神圣棱镜",
         [14] = "神圣震击",
         [15] = "公正之剑",
-        [16] = "圣洁鸣钟",
+        [16] = "",
         [17] = "处决宣判",
         [18] = "最终审判",
         [19] = "复仇之怒",

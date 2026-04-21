@@ -314,7 +314,8 @@ local function updatePlayerCastingInfo()
     if state.casting then
         local cast = UnitCastingDuration("player")
         if cast then
-            local castingDurationColor = cast:EvaluateRemainingDuration(curve10)
+            local castingDurationColor = cast:EvaluateElapsedDuration(curve10)
+            ---@diagnostic disable-next-line: param-type-mismatch
             local _, _, b = castingDurationColor:GetRGB()
             creat(fixed["施法"], b)
         end
@@ -329,6 +330,7 @@ local function updatePlayerChannelingInfo()
         local channel = UnitChannelDuration("player")
         if channel then
             local channelDurationColor = channel:EvaluateRemainingDuration(curve10)
+            ---@diagnostic disable-next-line: param-type-mismatch
             local _, _, b = channelDurationColor:GetRGB()
             creat(fixed["引导"], b)
         end
@@ -359,6 +361,7 @@ end
 -- 更新玩家血量信息
 local function updatePlayerHealth()
     state.healthPercent = UnitHealthPercent("player", false, curve100)
+    ---@diagnostic disable-next-line: param-type-mismatch
     local _, _, b = state.healthPercent:GetRGB()
     creat(fixed["生命值"], b)
 end
@@ -367,6 +370,7 @@ end
 local function updatePlayerPower(powerType)
     if (state.powerType and powerType == state.powerType) or state.powerType == nil or powerType == nil then
         state.powerPercent = UnitPowerPercent("player", enumPowerType[state.powerType], nil, curve100)
+        ---@diagnostic disable-next-line: param-type-mismatch
         local _, _, b = state.powerPercent:GetRGB()
         creat(fixed["能量值"], b)
     end
@@ -643,6 +647,7 @@ local function updateSpellCooldown()
         if cdDurationObj and cdInfo then
             local result = cdDurationObj:EvaluateRemainingDuration(curve255, 1)
             fallbackColor:SetRGBA(0, index, 1)
+            ---@diagnostic disable-next-line: param-type-mismatch
             local value = EvaluateColorFromBoolean(cdInfo.isEnabled, result, fallbackColor)
             local _, _, b = value:GetRGB()
             ---@diagnostic disable-next-line: undefined-field
@@ -656,6 +661,7 @@ local function updateSpellCooldown()
             local chDurationObj = GetSpellChargeDuration(spellID)
             if chDurationObj then
                 local result = chDurationObj:EvaluateRemainingDuration(curve255)
+                ---@diagnostic disable-next-line: param-type-mismatch
                 local _, _, b = result:GetRGB()
                 creat(chargeIndex, b)
             else
@@ -807,6 +813,7 @@ end
 -- 更新目标生命值
 local function updateTargetHealth()
     target.healthPercent = UnitHealthPercent("target", false, curve100)
+    ---@diagnostic disable-next-line: param-type-mismatch
     local _, _, b = target.healthPercent:GetRGB()
     if blocks and blocks["目标生命值"] then
         creat(blocks["目标生命值"], b)
@@ -865,6 +872,7 @@ local function updateUnitHealthInfo(unit)
     local index = group_blocks.unit_start + (obj.index - 1) * group_blocks.block_num + group_blocks.healthPercent
     obj.curve = creatColorCurveScaling(100 + obj.inComingHeals - obj.healAbsorb)
     local healthPercent = UnitHealthPercent(unit, false, obj.curve)
+    ---@diagnostic disable-next-line: param-type-mismatch
     local _, _, b = healthPercent:GetRGB()
     obj.healthPercent = b
     creat(index, obj.healthPercent)
@@ -1045,6 +1053,7 @@ local function OnUpdateUnitAura()
                     creat(index, 1)
                 elseif duration then
                     local auraduration = duration:EvaluateRemainingDuration(curve255)
+                    ---@diagnostic disable-next-line: param-type-mismatch
                     local _, _, b = auraduration:GetRGB()
                     creat(index, b)
                 end

@@ -23,6 +23,7 @@
 
 libs/LibStub/LibStub.lua
 libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua
+core/core.lua
 core/config.lua
 core/block.lua
 core/macro.lua

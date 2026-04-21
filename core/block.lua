@@ -163,5 +163,5 @@ function fu.ClearAllFuyutsuiBars()
     wipe(spellIdToBar) -- 必须清空映射表，否则下次无法重新创建
     nextAvailableIndex = 2
 
-    print("|cff00ff00FuyutsuiBars 清除成功: 计数器与法术映射已重置。|r")
+    -- print("|cff00ff00FuyutsuiBars 清除成功: 计数器与法术映射已重置。|r")
 end

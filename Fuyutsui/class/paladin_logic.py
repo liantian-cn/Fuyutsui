@@ -21,7 +21,7 @@ action_map = {
     15: ("最终审判", "最终审判"),
     16: ("灰烬觉醒", "灰烬觉醒"),
     17: ("神圣风暴", "神圣风暴"),
-    18: ("圣光之锤", "灰烬觉醒"),
+    18: ("圣光之锤", "灰烬觉醒"),  # 防御: 圣洁鸣钟; 惩戒: 灰烬觉醒
     20: ("处决宣判", "处决宣判"),
 }
 
@@ -63,15 +63,15 @@ def _get_ret_helper_finisher(one_key_value, finisher_mode=0):
     if one_key_value == 15:
         return ("最终审判", "最终审判")
     if one_key_value == 17:
-        if finisher_mode == 1:
+        if finisher_mode == 2:
             return ("神圣风暴", "最终审判")
         return ("神圣风暴", "神圣风暴")
     if one_key_value == 18:
-        if finisher_mode == 1:
+        if finisher_mode == 2:
             return ("圣光之锤", "最终审判")
         return ("圣光之锤", "神圣风暴")
     if one_key_value == 20:
-        if finisher_mode == 1:
+        if finisher_mode == 2:
             return ("处决宣判", "最终审判")
         return ("处决宣判", "神圣风暴")
     return None
@@ -179,6 +179,7 @@ def run_paladin_logic(state_dict, spec_name):
             驱散单位 = dispel_unit_disease
         if 驱散单位 is None:
             驱散单位 = dispel_unit_poison
+        
         if 引导 > 0:
             current_step = "在引导,不执行任何操作"
         elif 法术失败 != 0 and 失败法术 is not None:
@@ -298,17 +299,17 @@ def run_paladin_logic(state_dict, spec_name):
     elif spec_name == "惩戒":
         生命值 = int(state_dict.get("生命值", 100) or 100)
         神圣能量 = int(state_dict.get("神圣能量", 0) or 0)
-        惩戒终结模式 = int(state_dict.get("惩戒终结模式", 0) or 0)
+        AOE开关 = int(state_dict.get("AOE开关", 0) or 0)
 
         公正之剑 = spells.get("公正之剑", 99)
         审判 = spells.get("审判", 99)
         荣耀圣令 = spells.get("荣耀圣令", 99)
 
-        helper_finisher = _get_ret_helper_finisher(一键辅助, 惩戒终结模式)
+        helper_finisher = _get_ret_helper_finisher(一键辅助, AOE开关)
 
         unit_info["神圣能量"] = 神圣能量
         unit_info["一键辅助"] = 一键辅助
-        unit_info["惩戒终结模式"] = 惩戒终结模式
+        unit_info["AOE开关"] = AOE开关
 
         if 法术失败 != 0 and 失败法术 is not None:
             current_step = f"施放 {失败法术}"
@@ -332,7 +333,7 @@ def run_paladin_logic(state_dict, spec_name):
             action_hotkey = get_hotkey(0, cast_name)
         elif 神圣能量 == 3 and (公正之剑 <= 1 or 审判 <= 1 or helper_finisher):
             action_hotkey, current_step = _resolve_ret_3hp_action(
-                公正之剑, 审判, 一键辅助, helper_finisher, 惩戒终结模式
+                公正之剑, 审判, 一键辅助, helper_finisher, AOE开关
             )
         elif 公正之剑 <= 1:
             current_step = "常规: 公正之剑"

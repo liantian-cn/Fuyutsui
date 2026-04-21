@@ -43,60 +43,6 @@ def get_game_top_left(window_title):
     return point.x, point.y, window_width
 
 
-def scan_top_bar(window_title="魔兽世界"):
-    """
-    扫描客户区顶部长条（自适应步长）：
-    找 (R=0,G=1,B=0) 为起点，向右逐像素扫描，当 R=0 且 1<=G<=200 时，
-    用 G 通道作为索引、B 通道作为数值，填充 row_data。
-    返回 row_data: {1: val1, 2: val2, ...} 或 None
-    """
-    pos = get_game_top_left(window_title)
-    if not pos:
-        return None
-
-    base_x, base_y, width = pos
-
-    with mss.mss() as sct:
-        monitor = {"top": base_y, "left": base_x, "width": width, "height": 1}
-        img = sct.grab(monitor)
-        raw_data = img.raw
-        total_bytes = len(raw_data)
-
-        def pixel_at(x, y):
-            offset = (y * width + x) * 4
-            if offset + 2 >= total_bytes or x >= width:
-                return None, None, None
-            # mss 返回 BGRA
-            return raw_data[offset], raw_data[offset + 1], raw_data[offset + 2]
-
-        # 1. 找起点 (R=0, G=1, B=0)
-        start_x = -1
-        for x in range(min(PIXELS_PER_ROW, width)):
-            b, g, r = pixel_at(x, 0)
-            if r is None:
-                break
-            if r == 0 and g == 1 and b == 0:
-                start_x = x
-                break
-        if start_x == -1:
-            return None
-
-        # 2. 从起点向右逐像素扫描，G 通道为索引 (1~200)，B 通道为数值
-        row_data = {}
-        current_x = start_x
-        while current_x < width:
-            b, g, r = pixel_at(current_x, 0)
-            if r is None:
-                break
-            if r == 0 and 1 <= g <= PIXELS_PER_ROW:
-                row_data[g] = b
-                if g == PIXELS_PER_ROW:
-                    break
-            current_x += 1
-
-        return row_data if row_data else None
-
-
 def _is_rgb_red_marker(b, g, r):
     """RGB (1, 0, 0)；mss 为 BGRA 顺序入参。"""
     return r == 1 and g == 0 and b == 0
@@ -112,19 +58,27 @@ def _is_rgb_white(b, g, r):
     return r == 255 and g == 255 and b == 255
 
 
-def scan_row_data_red_white_markers(window_title="魔兽世界"):
+def _is_rgb_green_marker(b, g, r):
+    """RGB (0, 1, 0)；顶部长条起点标记。"""
+    return r == 0 and g == 1 and b == 0
+
+
+def scan_screen_data(window_title="魔兽世界"):
     """
-    从魔兽世界客户区左上角开始，沿左边界 (x=0) 向下扫描，找到首个 RGB(1,0,0) 的像素所在行。
-    在该行上从左到右扫描，每识别到一种「开始」则新建一个键（从 1 递增）：
-    - 顺序出现 (1,0,0) 之后出现 (1,1,0)，这一对算作一次开始（中间可夹其它像素）；
-    - 或出现 (255,255,255)：连续白像素只作为一次开始（取每段连续白的第一格）。
-    每次开始之后：向右先找到 (255,255,255)；若在遇到下一个 (1,0,0) 或行尾前未出现白，则该键值为 0；
-    出现白之后继续向右，第一个非 (255,255,255) 的像素的 G 记入该键；否则 0。
-    未找到游戏窗口返回 None；左列无 (1,0,0) 返回空字典 {}。
+    合并两个屏幕扫描函数：一次截图同时扫描顶部长条和左边界标记。
+    返回 (row_data, bar_data) 元组：
+    - row_data: 顶部长条数据 {1: val1, 2: val2, ...}
+    - bar_data: 左边界标记数据 {1: val1, 2: val2, ...}
+    若扫描失败返回 (None, None)
+    
+    优化：
+    1. 只扫描必要的区域（顶部 1 行 + 左边界）
+    2. 使用字节数组直接访问，避免重复计算偏移
+    3. 提前终止扫描，减少不必要的像素检查
     """
     hwnd = ctypes.windll.user32.FindWindowW(None, window_title)
     if not hwnd:
-        return None
+        return None, None
 
     point = wintypes.POINT(0, 0)
     ctypes.windll.user32.ClientToScreen(hwnd, ctypes.byref(point))
@@ -134,7 +88,7 @@ def scan_row_data_red_white_markers(window_title="魔兽世界"):
     width = rect.right - rect.left
     height = rect.bottom - rect.top
     if width <= 0 or height <= 0:
-        return None
+        return None, None
 
     base_x, base_y = point.x, point.y
 
@@ -143,91 +97,146 @@ def scan_row_data_red_white_markers(window_title="魔兽世界"):
         img = sct.grab(monitor)
         raw_data = img.raw
         total_bytes = len(raw_data)
+        width_bytes = width * 4
 
-        def pixel_at(x, y):
-            offset = (y * width + x) * 4
-            if offset + 2 >= total_bytes or x < 0 or x >= width or y < 0 or y >= height:
-                return None, None, None
-            return raw_data[offset], raw_data[offset + 1], raw_data[offset + 2]
-
-        marker_y = None
-        for y in range(height):
-            b, g, r = pixel_at(0, y)
-            if r is None:
+        # ========== 扫描顶部长条 (y=0) ==========
+        row_data = {}
+        start_x = -1
+        
+        # 优化：直接在第一行扫描，找到起点后立即开始收集数据
+        for x in range(min(PIXELS_PER_ROW, width)):
+            offset = x * 4
+            if offset + 2 >= total_bytes:
                 break
+            b, g, r = raw_data[offset], raw_data[offset + 1], raw_data[offset + 2]
+            if _is_rgb_green_marker(b, g, r):
+                start_x = x
+                break
+
+        if start_x != -1:
+            # 从起点开始扫描，直到找到所有数据或到达行尾
+            for x in range(start_x, width):
+                offset = x * 4
+                if offset + 2 >= total_bytes:
+                    break
+                b, g, r = raw_data[offset], raw_data[offset + 1], raw_data[offset + 2]
+                if r == 0 and 1 <= g <= PIXELS_PER_ROW:
+                    row_data[g] = b
+                    if g == PIXELS_PER_ROW:  # 提前终止：已收集所有数据
+                        break
+                elif g > PIXELS_PER_ROW:  # 超出范围，停止扫描
+                    break
+
+        # ========== 扫描左边界标记 (x=0) ==========
+        bar_data = {}
+        marker_y = None
+        
+        # 优化：只扫描左边界（x=0），找到第一个红色标记
+        for y in range(height):
+            offset = y * width_bytes  # 每行的起始偏移
+            if offset + 2 >= total_bytes:
+                break
+            b, g, r = raw_data[offset], raw_data[offset + 1], raw_data[offset + 2]
             if _is_rgb_red_marker(b, g, r):
                 marker_y = y
                 break
 
-        if marker_y is None:
-            return {}
-
-        def consume_value_from(from_x, already_saw_white=False):
-            """
-            从 from_x 起取该键的数值。already_saw_white=True 表示「开始」本身就是白，从右侧找非白即可。
-            遇到 (1,0,0) 视为中断当前取值（未完成则记 0），返回的 next_x 指向该 (1,0,0) 供外层处理。
-            返回 (记录的 G 或 0, 下一个扫描位置 x)。
-            """
-            sx = from_x
-            need_white = not already_saw_white
-            while sx < width:
-                b2, g2, r2 = pixel_at(sx, marker_y)
-                if r2 is None:
-                    break
-                if _is_rgb_red_marker(b2, g2, r2):
-                    return 0, sx
-                if need_white:
+        if marker_y is not None:
+            marker_row_offset = marker_y * width_bytes
+            
+            def consume_value_from(from_x, already_saw_white=False):
+                """从 from_x 起取该键的数值（优化版本）"""
+                sx = from_x
+                need_white = not already_saw_white
+                while sx < width:
+                    offset = marker_row_offset + sx * 4
+                    if offset + 2 >= total_bytes:
+                        break
+                    b2, g2, r2 = raw_data[offset], raw_data[offset + 1], raw_data[offset + 2]
+                    if _is_rgb_red_marker(b2, g2, r2):
+                        return 0, sx
+                    if need_white:
+                        if _is_rgb_white(b2, g2, r2):
+                            need_white = False
+                        sx += 1
+                        continue
                     if _is_rgb_white(b2, g2, r2):
-                        need_white = False
-                    sx += 1
-                    continue
-                if _is_rgb_white(b2, g2, r2):
-                    sx += 1
-                    continue
-                return int(g2), sx + 1
-            if need_white:
-                return 0, width
-            return 0, width
+                        sx += 1
+                        continue
+                    return int(g2), sx + 1
+                return (0, width) if need_white else (0, width)
 
-        def _dict_value_from_raw_g(raw_g):
-            """原始 G>0 时存 G-1，否则 0；等价于 max(0, G-1)。"""
-            return max(0, int(raw_g) - 1)
+            def _dict_value_from_raw_g(raw_g):
+                """原始 G>0 时存 G-1，否则 0"""
+                return max(0, int(raw_g) - 1)
 
-        row_result = {}
-        seg_idx = 0
-        x = 0
-        pending_1_0_0 = False
-        while x < width:
-            b, g, r = pixel_at(x, marker_y)
-            if r is None:
-                break
+            seg_idx = 0
+            x = 0
+            pending_1_0_0 = False
+            
+            while x < width:
+                offset = marker_row_offset + x * 4
+                if offset + 2 >= total_bytes:
+                    break
+                b, g, r = raw_data[offset], raw_data[offset + 1], raw_data[offset + 2]
 
-            if pending_1_0_0 and _is_rgb_red_green_marker(b, g, r):
-                pending_1_0_0 = False
-                seg_idx += 1
-                val, next_x = consume_value_from(x + 1, already_saw_white=False)
-                row_result[seg_idx] = _dict_value_from_raw_g(val)
-                x = next_x
-                continue
-
-            if _is_rgb_red_marker(b, g, r):
-                pending_1_0_0 = True
-                x += 1
-                continue
-
-            if _is_rgb_white(b, g, r):
-                prev_white = x > 0 and _is_rgb_white(*pixel_at(x - 1, marker_y))
-                if not prev_white:
+                if pending_1_0_0 and _is_rgb_red_green_marker(b, g, r):
                     pending_1_0_0 = False
                     seg_idx += 1
-                    val, next_x = consume_value_from(x + 1, already_saw_white=True)
-                    row_result[seg_idx] = _dict_value_from_raw_g(val)
+                    val, next_x = consume_value_from(x + 1, already_saw_white=False)
+                    bar_data[seg_idx] = _dict_value_from_raw_g(val)
                     x = next_x
                     continue
 
-            x += 1
+                if _is_rgb_red_marker(b, g, r):
+                    pending_1_0_0 = True
+                    x += 1
+                    continue
 
-        return row_result
+                if _is_rgb_white(b, g, r):
+                    # 检查前一个像素是否为白色
+                    prev_white = False
+                    if x > 0:
+                        prev_offset = marker_row_offset + (x - 1) * 4
+                        if prev_offset + 2 < total_bytes:
+                            pb, pg, pr = raw_data[prev_offset], raw_data[prev_offset + 1], raw_data[prev_offset + 2]
+                            prev_white = _is_rgb_white(pb, pg, pr)
+                    
+                    if not prev_white:
+                        pending_1_0_0 = False
+                        seg_idx += 1
+                        val, next_x = consume_value_from(x + 1, already_saw_white=True)
+                        bar_data[seg_idx] = _dict_value_from_raw_g(val)
+                        x = next_x
+                        continue
+
+                x += 1
+
+        return (row_data if row_data else None, bar_data if bar_data else {})
+
+
+def scan_top_bar(window_title="魔兽世界"):
+    """
+    扫描客户区顶部长条（自适应步长）：
+    找 (R=0,G=1,B=0) 为起点，向右逐像素扫描，当 R=0 且 1<=G<=200 时，
+    用 G 通道作为索引、B 通道作为数值，填充 row_data。
+    返回 row_data: {1: val1, 2: val2, ...} 或 None
+    
+    已弃用：请使用 scan_screen_data() 替代，以减少屏幕截图次数。
+    """
+    row_data, _ = scan_screen_data(window_title)
+    return row_data
+
+
+def scan_row_data_red_white_markers(window_title="魔兽世界"):
+    """
+    从魔兽世界客户区左上角开始，沿左边界 (x=0) 向下扫描，找到首个 RGB(1,0,0) 的像素所在行。
+    在该行上从左到右扫描，每识别到一种「开始」则新建一个键（从 1 递增）。
+    
+    已弃用：请使用 scan_screen_data() 替代，以减少屏幕截图次数。
+    """
+    _, bar_data = scan_screen_data(window_title)
+    return bar_data
 
 
 # 可与 state 分开展开在 YAML 顶层的像素元字段（step 与 state 同一套索引）
