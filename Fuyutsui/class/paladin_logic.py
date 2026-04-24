@@ -48,13 +48,14 @@ def _get_failed_spell(state_dict):
 def _get_ret_helper_finisher(one_key_value, finisher_mode=0):
     """
     返回惩戒终结技对应的 (显示名, 实际按键技能名)。
+    finisher_mode: 0=自动(跟随一键辅助), 1=强制单体
     终结技规则：
-    群体模式:
+    自动模式 (0):
     - 推荐最终审判 -> 打最终审判
     - 推荐神圣风暴 -> 打神圣风暴
     - 推荐圣光之锤 -> 打神圣风暴
     - 推荐处决宣判 -> 打神圣风暴
-    单体模式:
+    单体模式 (1):
     - 推荐最终审判 -> 打最终审判
     - 推荐神圣风暴 -> 打最终审判
     - 推荐圣光之锤 -> 打最终审判
@@ -63,15 +64,15 @@ def _get_ret_helper_finisher(one_key_value, finisher_mode=0):
     if one_key_value == 15:
         return ("最终审判", "最终审判")
     if one_key_value == 17:
-        if finisher_mode == 2:
+        if finisher_mode == 1:
             return ("神圣风暴", "最终审判")
         return ("神圣风暴", "神圣风暴")
     if one_key_value == 18:
-        if finisher_mode == 2:
+        if finisher_mode == 1:
             return ("圣光之锤", "最终审判")
         return ("圣光之锤", "神圣风暴")
     if one_key_value == 20:
-        if finisher_mode == 2:
+        if finisher_mode == 1:
             return ("处决宣判", "最终审判")
         return ("处决宣判", "神圣风暴")
     return None

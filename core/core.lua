@@ -31,11 +31,9 @@ end
 
 local function switchAoeMode()
     if aoeMode == 0 then
-        print("|cff00ff00[Fuyutsui]|r 已切换|cff00ff00默认|r模式！")
+        print("|cff00ff00[Fuyutsui]|r 已切换|cff00ff00自动|r模式！")
     elseif aoeMode == 1 then
         print("|cff00ff00[Fuyutsui]|r 已切换|cff00ff00单体|r模式！")
-    elseif aoeMode == 2 then
-        print("|cff00ff00[Fuyutsui]|r 已切换|cff00ff00AOE|r模式！")
     end
     if fu.blocks and fu.blocks["AOE开关"] then
         fu.updateOrCreatTextureByIndex(fu.blocks["AOE开关"], aoeMode / 255)
@@ -63,13 +61,10 @@ local function Fuyutsui_SlashHandler(msg)
         switchCooldown()
         -- AOE模式
     elseif command == "aoemode" then
-        aoeMode = (aoeMode + 1) % 3
+        aoeMode = (aoeMode == 0) and 1 or 0
         switchAoeMode()
-    elseif command == "aoemode default" then
+    elseif command == "aoemode auto" or command == "aoemode aoe" then
         aoeMode = 0
-        switchAoeMode()
-    elseif command == "aoemode aoe" then
-        aoeMode = 2
         switchAoeMode()
     elseif command == "aoemode single" then
         aoeMode = 1
@@ -88,10 +83,9 @@ local function Fuyutsui_SlashHandler(msg)
         -- 默认显示的帮助信息
         print("|cff00ff00Fuyutsui|r 命令列表:")
         print("/fu cd                   - 冷却检查")
-        print("/fu aoemode              - 切换Aoe模式")
-        print("/fu aoemode default      - 切换回默认模式")
-        print("/fu aoemode aoe          - AOE模式")
-        print("/fu aoemode single       - 单体模式")
+        print("/fu aoemode              - 切换模式")
+        print("/fu aoemode auto         - 自动模式 (根据插件推荐)")
+        print("/fu aoemode single       - 单体模式 (强制单体)")
         print("/fu dpsmode              - 输出模式切换")
         print("/fu dpsmode manual       - 手动编写逻辑")
         print("/fu dpsmode assistant    - 官方一键辅助")
