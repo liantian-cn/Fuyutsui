@@ -2,30 +2,6 @@
 """德鲁伊职业的逻辑决策（奶德 / 守护）。"""
 
 from utils import *
-spell_map ={
-    1: "台风",
-    2: "夺魂咆哮",
-    3: "乌索尔旋风",
-    4: "自然迅捷",
-    5: "月火术",
-    6: "野性印记",
-    7: "摧折",
-    8: "明月普照",
-    9: "横扫",
-    10: "熊形态",
-    11: "痛击",
-    12: "裂伤",
-    13: "赤红之月",
-    14: "毁灭",
-    15: "凶猛撕咬",
-    16: "割裂",
-    17: "撕碎",
-    18: "斜掠",
-    19: "愤怒",
-    20: "愈合",
-    21: "野性生长",
-    22: "宁静",
-}
 
 # 将需要驱散的首领 ID
 need_dispel_bosses = {4, 5}
@@ -54,6 +30,34 @@ action_map = {
     16: ("割裂", "割裂"),
     17: ("撕碎", "撕碎"),
     18: ("斜掠", "斜掠"),
+    23: ("愤怒", "愤怒"),
+    24: ("星涌术", "星涌术"),
+    25: ("星火术", "星火术"),
+    26: ("万灵之召", "万灵之召"),
+    27: ("星辰坠落", "星辰坠落"),
+    28: ("自然之力", "自然之力"),
+    29: ("日蚀", "日蚀"),
+    30: ("超凡之盟", "超凡之盟"),
+    32: ("化身：艾露恩之眷", "化身：艾露恩之眷"),
+    33: ("艾露恩之怒", "艾露恩之怒"),
+    34: ("新月", "新月"),
+    35: ("枭兽形态", "枭兽形态"),
+    36: ("阳炎术", "阳炎术"),
+    37: ("月蚀", "月蚀"),
+    38: ("猎豹形态", "猎豹形态"),
+    39: ("化身：阿莎曼之灵", "化身：阿莎曼之灵"),
+    40: ("原始之怒", "原始之怒"),
+    41: ("迎头痛击", "迎头痛击"),
+    42: ("怒意狂乱", "怒意狂乱"),
+    43: ("猛虎之怒", "猛虎之怒"),
+    44: ("生存本能", "生存本能"),
+    45: ("野性冲锋", "野性冲锋"),
+    46: ("群体缠绕", "群体缠绕"),
+    47: ("狂暴", "狂暴"),
+    48: ("啃噬", "啃噬"),
+    49: ("野性狂乱", "野性狂乱"),
+    50: ("横扫", "横扫"),
+    51: ("毁灭", "凶猛撕咬"),
 }
 
 # 找到失败法术，必须是法术有冷却时间，并且冷却时间为 0
@@ -82,12 +86,41 @@ def run_druid_logic(state_dict, spec_name):
     难度 = int(state_dict.get("难度", 0) or 0)
     英雄天赋 = int(state_dict.get("英雄天赋", 0) or 0)
     失败法术 = _get_failed_spell(state_dict)
+    tup = action_map.get(一键辅助)
 
     action_hotkey = None
     current_step = "无匹配技能"
     unit_info = {}
+    if spec_name == "平衡":
+        目标生命值 = state_dict.get("目标生命值", 0)
+        敌人人数 = state_dict.get("敌人人数", 0)
+        姿态 = state_dict.get("姿态", 0)
+        if 一键辅助 == 35:
+            current_step = "施放 枭兽形态"
+            action_hotkey = get_hotkey(0, "枭兽形态")
+        elif 引导 > 0:
+            current_step = "在引导,不执行任何操作"
+        elif 战斗 and 1 <= 目标类型 <= 3 and tup:
+            current_step = f"施放 {tup[0]}"
+            action_hotkey = get_hotkey(0, tup[1])
+        else:
+            current_step = "无匹配技能"
+    elif spec_name == "野性":
+        目标生命值 = state_dict.get("目标生命值", 0)
+        敌人人数 = state_dict.get("敌人人数", 0)
+        姿态 = state_dict.get("姿态", 0)
+        if 一键辅助 == 38:
+            current_step = "施放 猎豹形态"
+            action_hotkey = get_hotkey(0, "猎豹形态")
+        elif 引导 > 0:
+            current_step = "在引导,不执行任何操作"
+        elif 战斗 and 1 <= 目标类型 <= 3 and tup:
+            current_step = f"施放 {tup[0]}"
+            action_hotkey = get_hotkey(0, tup[1])
+        else:
+            current_step = "无匹配技能"
 
-    if spec_name == "守护":
+    elif spec_name == "守护":
         狂暴充能 = spells.get("狂暴充能")
         狂暴回复 = spells.get("狂暴回复")
         铁鬃 = state_dict.get("铁鬃")
@@ -95,7 +128,6 @@ def run_druid_logic(state_dict, spec_name):
         姿态 = state_dict.get("姿态", 0)
         目标距离 = state_dict.get("目标距离", 0)
         队伍人数 = state_dict.get("队伍人数")
-        tup = action_map.get(一键辅助)
 
         if 引导 > 0:
             current_step = "在引导,不执行任何操作"
@@ -173,8 +205,7 @@ def run_druid_logic(state_dict, spec_name):
         有绽放单位, 绽放时间 = get_unit_with_aura(state_dict, "生命绽放")
         count90 = count_units_below_health(state_dict, 90)
         count70 = count_units_below_health(state_dict, 70)
-        tup = action_map.get(一键辅助)
-
+   
         驱散单位 = None
         if dispel_unit_magic is not None:
             if 队伍类型 == 46 and 首领战 not in no_dispel_bosses:

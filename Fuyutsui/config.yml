@@ -575,6 +575,32 @@ state:
 
 11: # 德鲁伊
   keymap: "druid.yml"
+  1:
+    目标生命值: {step: 21, type: "int" }
+    敌人人数: {step: 22, type: "int" }
+    姿态: {step: 23, type: "int" }
+
+    spells:
+      树皮术: {step: 31, type: "int" }
+      台风: {step: 32, type: "int" }
+      夺魂咆哮: {step: 33, type: "int" }
+      激活: {step: 34, type: "int" }
+      乌索尔旋风: {step: 35, type: "int" }
+
+      日光术: {step: 36, type: "int" }
+    
+  2:
+    目标生命值: {step: 21, type: "int" }
+    敌人人数: {step: 22, type: "int" }
+    姿态: {step: 23, type: "int" }
+
+    spells:
+      树皮术: {step: 31, type: "int" }
+      台风: {step: 32, type: "int" }
+      夺魂咆哮: {step: 33, type: "int" }
+      激活: {step: 34, type: "int" }
+      乌索尔旋风: {step: 35, type: "int" }
+
   3:
     目标生命值: {step: 21, type: "int" }
     敌人人数: {step: 22, type: "int" }
