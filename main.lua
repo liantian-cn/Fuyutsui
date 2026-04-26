@@ -5,6 +5,7 @@ local GetSpellChargeDuration = C_Spell.GetSpellChargeDuration
 local GetSpellCooldown = C_Spell.GetSpellCooldown
 local GetOverrideSpell = C_Spell.GetOverrideSpell
 local IsSpellInRange = C_Spell.IsSpellInRange
+local GetSpellName = C_Spell.GetSpellName
 local IsSpellKnown = C_SpellBook.IsSpellKnown
 local IsSpellInSpellBook = C_SpellBook.IsSpellInSpellBook
 local EvaluateColorFromBoolean = C_CurveUtil.EvaluateColorFromBoolean
@@ -117,6 +118,17 @@ end
 local function updateUnitRange(unit)
     local minRange, maxRange = rc:GetRange(unit)
     return minRange, maxRange
+end
+
+-- 打印成功施放的技能id和名称, 不重复打印已经施放的技能
+-- 打印格式为  [spellID] = { index = i, }, -- 技能名称
+local succSpells = {}
+local succIndex = 1
+local function printSuccSpell(spellID)
+    if succSpells[spellID] or fu.spellsList[spellID] then return end
+    succSpells[spellID] = true
+    print("[" .. spellID .. "]" .. " = { index = " .. succIndex .. ", }, -- " .. GetSpellName(spellID))
+    succIndex = succIndex + 1
 end
 
 -- ================================================================
@@ -752,7 +764,7 @@ local function updateFailedSpellBySuccess(spellID)
     if spellID ~= failedSpellId then return end
     failedSpell = nil
     failedSpellId = nil
-    print("|cff00ff00插入技能: |r", C_Spell.GetSpellName(spellID))
+    print("|cff00ff00插入技能: |r", GetSpellName(spellID))
     creat(fixed["法术失败"], 0)
 end
 
@@ -1399,6 +1411,7 @@ function frame:UNIT_SPELLCAST_SUCCEEDED(unitTarget, castGUID, spellID, castBarID
     if not isSec(spellID) then
         updateAuraBySuccess(spellID, castBarID)
         updateFailedSpellBySuccess(spellID)
+        printSuccSpell(spellID)
         -- print(spellID)
         if spellID == 384255 then
             fu.ClearAllFuyutsuiBars()
